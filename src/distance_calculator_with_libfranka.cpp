@@ -144,16 +144,17 @@ int main(int argc, char** argv)
     auto repulsion_publisher = node->create_publisher<std_msgs::msg::Float64MultiArray>("primitive_shape_repulsion_field",10);
     rclcpp::Rate loop_rate(25);
 
-    // franka::Robot robot("dummy");
-    // franka::RobotState robot_state;
-    // Eigen::Matrix<double, 7, 1> q_;
-    // q_ << 0.0, -0.785, 0.0, -2.356, 0.0, 1.571, 0.785;
-    // std::copy(q_.data(), q_.data() + 7, robot_state.q.begin());
-    // franka::Model model(robot.loadModel());
-    // std::array<double, 49> mass_matrix = model.mass(robot_state);
-    // RCLCPP_INFO_STREAM(node->get_logger(),mass_matrix[0] << mass_matrix[40]);
+    franka::Robot robot("192.168.1.200");
+    franka::RobotState robot_state;
+    Eigen::Matrix<double, 7, 1> q_;
+    q_ << 0.0, -0.785, 0.0, -2.356, 0.0, 1.571, 0.785;
+    std::copy(q_.data(), q_.data() + 7, robot_state.q.begin());
+    franka::Model model(robot.loadModel());
+    std::array<double, 49> mass_matrix = model.mass(robot_state);
+    RCLCPP_INFO_STREAM(node->get_logger(), "libfranka" << mass_matrix[0] << mass_matrix[40]);
     while (rclcpp::ok())
     {
+        RCLCPP_INFO_STREAM(node->get_logger(), "libfranka" << mass_matrix[0] << mass_matrix[40]);
         // Just want to check how long it takes to run the whole while loop, I can delete this afterwards
         auto start_time = std::chrono::steady_clock::now();
 
