@@ -93,6 +93,19 @@ private:
 */
 using namespace std::chrono_literals;
 
+inline void dampedPseudoInverse(const Eigen::MatrixXd& M_, Eigen::MatrixXd& M_pinv_, bool damped = true) {
+  double lambda_ = damped ? 0.2 : 0.0;
+  Eigen::JacobiSVD<Eigen::MatrixXd> svd(M_, Eigen::ComputeFullU | Eigen::ComputeFullV);   
+  Eigen::JacobiSVD<Eigen::MatrixXd>::SingularValuesType sing_vals_ = svd.singularValues();
+  Eigen::MatrixXd S_ = M_;  // copying the dimensions of M_, its content is not needed.
+  S_.setZero();
+
+  for (int i = 0; i < sing_vals_.size(); i++)
+     S_(i, i) = (sing_vals_(i)) / (sing_vals_(i) * sing_vals_(i) + lambda_ * lambda_);
+
+  M_pinv_ = Eigen::MatrixXd(svd.matrixV() * S_.transpose() * svd.matrixU().transpose());
+}
+
 std::vector<double> vectorXdToStdVector(const Eigen::VectorXd& eigen_vec) {
   std::vector<double> std_vec(7);
   for (int i = 0; i < 7; ++i) {
@@ -216,6 +229,7 @@ int main(int argc, char** argv)
 
         for (it = collision_result.contacts.begin(); it != collision_result.contacts.end(); ++it)
         {
+            // std::cout << "debugging!! " <<it->second[0].body_name_1 << " " << it->second[0].body_name_2 <<"\n";
             // We only consider the distance between obstacles and links
             if((it->second[0].body_type_1 == collision_detection::BodyType::ROBOT_LINK)
                                 &&(it->second[0].body_type_2 == collision_detection::BodyType::ROBOT_LINK))
@@ -358,8 +372,9 @@ int main(int argc, char** argv)
             {"panda_link3", "panda_link3"},
             {"panda_link4", "panda_link3"},
             {"panda_link5", "panda_link5"},
-            {"panda_link6", "panda_link5"},
-            {"panda_link7", "panda_link8"},
+            {"panda_link6", "panda_link6"},
+            {"panda_link7", "panda_link7"},
+            {"panda_link8", "panda_link8"},
             {"panda_hand",  "panda_link8"},
             {"panda_leftfinger", "panda_link8"},
             {"panda_rightfinger", "panda_link8"}
@@ -379,8 +394,10 @@ int main(int argc, char** argv)
             // Extract the translation part of the Jacobian
             J_i_trans = J_i.block<3, 7>(0, 0, 3, J_i.cols());
 
-            // Compute the pseudo inverse
-            J_i_trans_pinv = J_i_trans.completeOrthogonalDecomposition().pseudoInverse();
+            // Compute the pseudo inverse (damped or not damped)
+            // J_i_trans_pinv = J_i_trans.completeOrthogonalDecomposition().pseudoInverse();
+            double rho {0.2}; // damping term
+            J_i_trans_pinv = J_i_trans.transpose()*(J_i_trans * J_i_trans.transpose() + rho*rho*Eigen::Matrix3d::Identity()).completeOrthogonalDecomposition().pseudoInverse();
         }
 
         /*
@@ -419,7 +436,7 @@ int main(int argc, char** argv)
 
         // Finally combine all above to get the repulsion field in joint space
         double zeta {0.5}; // the influence margin
-        double delta {0.2}; // the static safety margin
+        double delta {0.25}; // the static safety margin
         // Eigen::VectorXd repulsion_field = calculateRepulsivePotential(min_distance) * repulsion_direction_joint_space;
         Eigen::VectorXd repulsion_field = std::max((zeta - min_distance)/(zeta - delta), 0.0) * repulsion_direction_joint_space;
         std_msgs::msg::Float64MultiArray repulsion_msg;
