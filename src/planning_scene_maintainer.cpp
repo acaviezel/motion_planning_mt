@@ -27,7 +27,7 @@ class PlanningSceneMaintainer : public rclcpp::Node
             primitive.dimensions[primitive.BOX_Y] = 1.0;
             primitive.dimensions[primitive.BOX_Z] = 0.02;
 
-            // Define the pose of the box (relative to the frame_id)
+            // Populate the ground plate, so planning won't plan a path that bumps into the real ground
             geometry_msgs::msg::Pose box_pose;
             box_pose.orientation.w = 1.0;
             box_pose.position.x = 0.0;
@@ -58,8 +58,8 @@ class PlanningSceneMaintainer : public rclcpp::Node
             // Define the pose of the box (relative to the frame_id)
             geometry_msgs::msg::Pose box_pose;
             box_pose.orientation.w = 1.0;
-            box_pose.position.x = -0.5;
-            box_pose.position.y = 0.0; // 0.2
+            box_pose.position.x = -0.7;
+            box_pose.position.y = 0.0;
             box_pose.position.z = 0.5;
 
             collision_object.primitives.push_back(primitive);
@@ -72,7 +72,7 @@ class PlanningSceneMaintainer : public rclcpp::Node
 
             std::vector<moveit_msgs::msg::CollisionObject> collision_objects;
             collision_objects.push_back(collision_object);
-            collision_objects.push_back(collision_object2);
+            // collision_objects.push_back(collision_object2);
             
             planning_scene_interface.applyCollisionObjects(collision_objects);
         }
