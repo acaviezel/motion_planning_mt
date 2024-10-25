@@ -25,6 +25,10 @@ add_executable(distance_calculator src/distance_calculator.cpp)
 add_executable(motion_planner src/motion_planner.cpp)
 add_executable(dynamic_random_scene src/dynamic_random_scene.cpp)
 add_executable(moving_box src/moving_box.cpp)
+add_executable(distance_calculator_with_libfranka src/distance_calculator_with_libfranka.cpp)
+add_executable(chomp_planner src/chomp_planner.cpp)
+add_executable(guided_moving_box src/guided_moving_box.cpp)
+add_executable(demo_scene src/demo_scene.cpp)
 
 target_include_directories(my_hello_moveit PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -153,6 +157,65 @@ ament_target_dependencies(
   "geometry_msgs"
 )
 
+target_include_directories(distance_calculator_with_libfranka PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+target_compile_features(distance_calculator_with_libfranka PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
+ament_target_dependencies(
+  distance_calculator_with_libfranka
+  "moveit_ros_planning_interface"
+  "rclcpp"
+  "moveit_msgs"
+  "shape_msgs"
+  "sensor_msgs"
+  "trajectory_msgs"
+  "Franka"
+)
+
+target_include_directories(chomp_planner PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+target_compile_features(chomp_planner PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
+ament_target_dependencies(
+  chomp_planner
+  "moveit_ros_planning_interface"
+  "rclcpp"
+  "moveit_visual_tools"
+  "moveit_msgs"
+  "shape_msgs"
+  "sensor_msgs"
+  "trajectory_msgs"
+  "geometry_msgs"
+)
+
+target_include_directories(guided_moving_box PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+target_compile_features(guided_moving_box PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
+ament_target_dependencies(
+  guided_moving_box
+  "moveit_ros_planning_interface"
+  "rclcpp"
+  "moveit_msgs"
+  "shape_msgs"
+  "sensor_msgs"
+  "geometry_msgs"
+)
+
+target_include_directories(demo_scene PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+target_compile_features(demo_scene PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
+ament_target_dependencies(
+  demo_scene
+  "moveit_ros_planning_interface"
+  "rclcpp"
+  "moveit_msgs"
+  "shape_msgs"
+  "sensor_msgs"
+  "geometry_msgs"
+)
+
 install(TARGETS 
   my_hello_moveit
   rrt_planner
@@ -160,9 +223,13 @@ install(TARGETS
   planning_scene_maintainer
   explicit_reference_governor
   distance_calculator
+  distance_calculator_with_libfranka
   motion_planner
   dynamic_random_scene
   moving_box
+  chomp_planner
+  guided_moving_box
+  demo_scene
   DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)
