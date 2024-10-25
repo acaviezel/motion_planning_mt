@@ -9,11 +9,53 @@
 #include <sensor_msgs/msg/joint_state.hpp>
 #include <trajectory_msgs/msg/joint_trajectory.hpp>
 #include <std_msgs/msg/float64_multi_array.hpp>
+#include <geometry_msgs/msg/pose.hpp>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
+#include <tf2_eigen/tf2_eigen.hpp>
 
 using namespace std::chrono_literals;
 using Eigen::VectorXd;
+using Eigen::Matrix4d;
 
+// Function to get transformation matrix from DH parameters
+Matrix4d get_tf_mat(int i, const std::vector<std::vector<double>>& dh) {
+    double a = dh[i][0];
+    double d = dh[i][1];
+    double alpha = dh[i][2];
+    double theta = dh[i][3];
 
+    double q = theta;  
+    Matrix4d T;
+    T << std::cos(q), -std::sin(q),  0, a,
+         std::sin(q) * std::cos(alpha), std::cos(q) * std::cos(alpha), -std::sin(alpha), -std::sin(alpha) * d,
+         std::sin(q) * std::sin(alpha), std::cos(q) * std::sin(alpha),  std::cos(alpha), std::cos(alpha) * d,
+         0, 0, 0, 1;
+
+    return T;
+}
+
+// Function to calculate the forward kinematics solution
+Matrix4d get_fk_solution(const std::vector<double>& joint_angles) {
+    std::vector<std::vector<double>> dh_params = {
+        {0, 0.333, 0, joint_angles[0]},
+        {0, 0, -M_PI / 2, joint_angles[1]},
+        {0, 0.316, M_PI / 2, joint_angles[2]},
+        {0.0825, 0, M_PI / 2, joint_angles[3]},
+        {-0.0825, 0.384, -M_PI / 2, joint_angles[4]},
+        {0, 0, M_PI / 2, joint_angles[5]},
+        {0.088, 0, M_PI / 2, joint_angles[6]},
+        {0, 0.107, 0, 0},
+        {0, 0, 0, -M_PI / 4},
+        {0, 0.1034, 0, 0}
+    };
+
+    Matrix4d T = Matrix4d::Identity(); // Initialize as identity matrix
+    for (int i = 0; i < 10; ++i) {
+        T = T * get_tf_mat(i, dh_params);
+    }
+
+    return T;
+}
 
 
 std::vector<double> vectorXdToStdVector(const VectorXd& eigen_vec) {
@@ -47,9 +89,9 @@ VectorXd jointRepulsionField(VectorXd q_v)
 {
     // Joint limit: min and max
     VectorXd q_min(7);
-    q_min << -2.8973, -1.7628, -2.8973, -3.0718, -2.8973, -0.0175, -2.8973;
+    q_min << -2.7437, -1.7837, -2.9007, -3.0421, -2.8065, 0.5445, -3.0159;
     VectorXd q_max(7); 
-    q_max << 2.8973, 1.7628, 2.8973, -0.0698, 2.8973, 3.7525, 2.8973;
+    q_max << 2.7437, 1.7837, 2.9007, -0.1518, 2.8065, 4.5169, 3.0159;
     
     VectorXd jointRepulsion(7);
     double zeta_q = 0.35; // the influence margin
@@ -86,8 +128,11 @@ class ExplicitReferenceGovernor : public rclcpp::Node
             primitive_shape_repulsion_field_subscription = this->create_subscription<std_msgs::msg::Float64MultiArray>(
                 "primitive_shape_repulsion_field", 10, std::bind(&ExplicitReferenceGovernor::primitiveShapeRepulsionFieldCallback, this, std::placeholders::_1));
 
-            applied_publisher = this->create_publisher<trajectory_msgs::msg::JointTrajectory>(
-                "panda_arm_controller/joint_trajectory", 10);
+            configuration_publisher = this->create_publisher<trajectory_msgs::msg::JointTrajectory>(
+                "nullspace_configuration", 10);
+            
+            goal_pose_publisher = this->create_publisher<geometry_msgs::msg::Pose>(
+                "ee_goal_pose", 10);
             
             q_v_old << 0.0, -0.785, 0.0, -2.356, 0.0, 1.571, 0.785; // initial configuration after launching
             q_v_new << 0.0, -0.785, 0.0, -2.356, 0.0, 1.571, 0.785; // initial configuration after launching
@@ -117,7 +162,13 @@ class ExplicitReferenceGovernor : public rclcpp::Node
             std::vector<double> std_q_v_new;
             std_q_v_new = vectorXdToStdVector(q_v_new);
             processed_msg.points[0].positions = std_q_v_new;
-            applied_publisher->publish(processed_msg);
+            Eigen::Matrix4d intermediate_goal_pose = get_fk_solution(std_q_v_new);
+            Eigen::Vector3d intermediate_goal_position = intermediate_goal_pose.block<3,1>(0,3);
+            Eigen::Quaterniond intermediate_goal_orientation(intermediate_goal_pose.block<3,3>(0,0));
+            intermediate_goal_pose_msg.position = tf2::toMsg(intermediate_goal_position);
+            intermediate_goal_pose_msg.orientation = tf2::toMsg(intermediate_goal_orientation);
+            goal_pose_publisher->publish(intermediate_goal_pose_msg);
+            configuration_publisher->publish(processed_msg);
             q_v_old = q_v_new;
         }
 
@@ -139,7 +190,10 @@ class ExplicitReferenceGovernor : public rclcpp::Node
         std::vector<double> primitve_shape_repulsion_field = {0.0 , 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
         rclcpp::Subscription<trajectory_msgs::msg::JointTrajectory>::SharedPtr reference_subscription;
         rclcpp::Subscription<std_msgs::msg::Float64MultiArray>::SharedPtr primitive_shape_repulsion_field_subscription;
-        rclcpp::Publisher<trajectory_msgs::msg::JointTrajectory>::SharedPtr applied_publisher;
+        rclcpp::Publisher<trajectory_msgs::msg::JointTrajectory>::SharedPtr configuration_publisher;
+        rclcpp::Publisher<geometry_msgs::msg::Pose>::SharedPtr goal_pose_publisher;
+
+        geometry_msgs::msg::Pose intermediate_goal_pose_msg;
 };
 
 int main(int argc, char** argv)
