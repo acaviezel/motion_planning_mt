@@ -1,0 +1,18 @@
+# the place that I can tune the positions for my demo video
+motion_planner:
+  ros__parameters:
+    set_goal_pose: true
+    goal_positions: [
+      0.2, -0.4, 0.3, 
+      0.2, -0.4, 0.3,
+      0.3, 0.4, 1.0, 
+      0.3, 0.4, 1.0,
+      0.4, 0.6, 0.3,
+      0.4, 0.6, 0.3]
+    goal_orientations: [
+      0.93, -0.36, 0.0, 0.0, 
+      0.93, -0.36, 0.0, 0.0,
+      0.0, 0.0, 1.0, 0.0, 
+      0.0, 0.0, 1.0, 0.0,
+      0.89, 0.46, 0.0, 0.0,
+      0.89, 0.46, 0.0, 0.0] # x, y, z, w
