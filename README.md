@@ -1,5 +1,33 @@
 # Real-time path planning for human-robot collaboration
 
+## Description
+Note: Right now, the code only works with a real robot.\
+Here is the overview of the system.
+![System Overview](img/System_overview_for_github.png)
+The figure shows how each node interact with each other.
+* `motion_planner` node is a sampling-based global planner. Right now, you can send a goal pose to the
+  node via command line interface when starting the node.
+  ```
+  ros2 run motion_planning_mt motion_planner --ros-args -p <parameter_name>:=<value> 
+  ```
+  There are five paramaeters you can set:
+  1. `goal_positions`: \
+   Goal positions in Cartesian space. It should be provided to the node as a list of double. For example, [x, y, z, x, y, z, ...]. The default value is [0.5, 0.0, 0.6].
+  2. `goal_orientations`: \
+   Goal orientations in quaternion. It should be provided to the node as a list of double. For example, [x, y, z, w, x, y, z, w, ...].The default value is [1.0 , 0.0, 0.0, 0.0].
+  3. `set_goal_pose`: \
+   whether to set the goal pose. The default value is `false`.
+  4. `seed`: \
+   The seed controls the goal position when you didn't set your own goal pose. The default value is 1.
+  5. `num_of_rounds`: \
+   Number of goal poses that the motion planner will plan for. If `num_of_rounds` is 3. There should be 9 numbers in `goal_positions` and 12numbers in `goal_orientations`. The default value is 1.
+* `distance_calculator` node calculates the repulsion field based on the closest distance between obstacles and the robot.
+* `explicit_reference_governor` node is a potential field based local planner. It receives all the information and generates
+  the final command that is sent to the Cartesian impedance controller.
+* `cartesian_impedance_controller` node calculates the required torque that is a combination of:
+  1. Impedance force that controls the end-effector behavior.
+  2. Nullspace torque that controls the configuration of the robot.
+
 ## Installtion steps
 ### MoveIt
 Install [Moveit Humble](https://moveit.picknik.ai/humble/doc/tutorials/getting_started/getting_started.html).
@@ -51,7 +79,7 @@ source install/setup.bash
 ```
 
 ### Franka ROS2
-We install the v0.1.13 of franka ros2. The installation steps based on [franka_ros2](https://github.com/frankaemika/franka_ros2/blob/humble/README.md)
+We install the **v0.1.13** of franka ros2. The installation steps based on [franka_ros2](https://github.com/frankaemika/franka_ros2/blob/humble/README.md)
 has been modified a little bit to install the specific version.
 ```
 sudo apt install -y \
@@ -134,6 +162,7 @@ colcon build --cmake-args -DCMAKE_BUILD_TYPE=Release
 source install/setup.sh
 ```
 ### Motion planner
+Lastly, clone this project and build.
 ```
 cd ~/franka_ros2_ws/src
 git clone https://github.com/ptliu268/motion_planning_mt.git
@@ -142,7 +171,9 @@ colcon build --cmake-args -DCMAKE_BUILD_TYPE=Release
 ```
 
 ## How to run the demo code
-After sourcing the workspace.\
+Note: Right now, the code only works with a real robot.
+
+After sourcing the workspace, change the working directory to `motion_planning_mt`
 ```
 cd src/motion_planning_mt
 ```
@@ -150,6 +181,10 @@ Launch the moveit environment and the Cartesian impedance controller.
 ```
 ros2 launch franka_moveit_config moveit.launch.py robot_ip:=<fci-ip>
 ```
+
+To visualize the obstacles and the minimum distance in RViz, add two ROS2 topics. In displays panel, click "Add" button on the lower left corner.
+   1. Add one MarkerArray, set the topic to which it subscribes to `/rviz_visual_tools` (If not yet subscribes).
+   2. Add one MarkerArray, set the topic to which it subscribes to `/minimum_distance_visualization`.
 
 Run the demo scene node, which populates three moving boxes.
 ```
@@ -166,7 +201,7 @@ Run the local planner node.
 ros2 run motion_planning_mt explicit_reference_governor
 ```
 
-Run the global planner node.
+Run the global planner node. * Be sure you are at the root folder of `motion_planning_mt`.
 ```
 ros2 run motion_planning_mt motion_planner --ros-args --params-file demo/repeat_demo.yaml
 ```
