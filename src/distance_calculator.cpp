@@ -157,14 +157,6 @@ int main(int argc, char** argv)
     auto repulsion_publisher = node->create_publisher<std_msgs::msg::Float64MultiArray>("primitive_shape_repulsion_field",10);
     rclcpp::Rate loop_rate(25);
 
-    // franka::Robot robot("dummy");
-    // franka::RobotState robot_state;
-    // Eigen::Matrix<double, 7, 1> q_;
-    // q_ << 0.0, -0.785, 0.0, -2.356, 0.0, 1.571, 0.785;
-    // std::copy(q_.data(), q_.data() + 7, robot_state.q.begin());
-    // franka::Model model(robot.loadModel());
-    // std::array<double, 49> mass_matrix = model.mass(robot_state);
-    // RCLCPP_INFO_STREAM(node->get_logger(),mass_matrix[0] << mass_matrix[40]);
     while (rclcpp::ok())
     {
         // Just want to check how long it takes to run the whole while loop, I can delete this afterwards
@@ -253,59 +245,6 @@ int main(int argc, char** argv)
                 repulsion_direction = it->second[0].nearest_points[0] - it->second[0].nearest_points[1];
             }
 
-            /*
-            RCLCPP_INFO(node->get_logger(), "from map value: 1st: %s ;2nd: %s", it->second[0].body_name_1.c_str(), it->second[0].body_name_2.c_str());
-            RCLCPP_INFO(node->get_logger(), "depth:%f",it->second[0].depth);
-            RCLCPP_INFO(node->get_logger(), "number of contacts in std::vector: %i",(int)it->second.size());
-            
-            std::string ns_name = it->second[0].body_name_1 + "=" + it->second[0].body_name_2;
-            visualization_msgs::msg::Marker spheres;
-            spheres.header.frame_id = "panda_link0";
-            spheres.header.stamp = node->now();
-            spheres.ns = ns_name;
-            spheres.id = 1;
-            spheres.type = visualization_msgs::msg::Marker::SPHERE_LIST;
-            spheres.action = visualization_msgs::msg::Marker::ADD;
-            spheres.scale.x = spheres.scale.y = spheres.scale.z = 0.02; // length from each axis
-            spheres.color.r = 0.0;
-            spheres.color.g = 1.0;
-            spheres.color.b = 0.0;
-            spheres.color.a = 0.7;
-            spheres.lifetime = rclcpp::Duration(500ms);
-
-            geometry_msgs::msg::Point p1;
-            p1.x = it->second[0].nearest_points[0].x();
-            p1.y = it->second[0].nearest_points[0].y();
-            p1.z = it->second[0].nearest_points[0].z();
-
-            geometry_msgs::msg::Point p2;
-            p2.x = it->second[0].nearest_points[1].x();
-            p2.y = it->second[0].nearest_points[1].y();
-            p2.z = it->second[0].nearest_points[1].z();
-
-            spheres.points.push_back(p1);
-            spheres.points.push_back(p2);
-
-            visualization_msgs::msg::Marker arrow;
-            arrow.header.frame_id = "panda_link0";
-            arrow.header.stamp = node->now();
-            arrow.ns = ns_name;
-            arrow.id = 2;
-            arrow.type = visualization_msgs::msg::Marker::ARROW;
-            arrow.action = visualization_msgs::msg::Marker::ADD;
-            arrow.scale.x = 0.01; // shaft diameter
-            arrow.scale.y = 0.015; // header diameter
-            arrow.color.r = 1.0;
-            arrow.color.g = 0.0;
-            arrow.color.b = 0.0;
-            arrow.color.a = 1.0;
-            arrow.lifetime = rclcpp::Duration(500ms);
-            arrow.points.push_back(p1);
-            arrow.points.push_back(p2);
-            
-            mkarray.markers.push_back(spheres);
-            mkarray.markers.push_back(arrow);
-            */
         }
 
         visualization_msgs::msg::Marker spheres;
@@ -400,27 +339,6 @@ int main(int argc, char** argv)
             J_i_trans_pinv = J_i_trans.transpose()*(J_i_trans * J_i_trans.transpose() + rho*rho*Eigen::Matrix3d::Identity()).completeOrthogonalDecomposition().pseudoInverse();
         }
 
-        /*
-        if (min_distance_pair_first == "panda_link2")
-        {
-            joint_i1 = current_state.getGlobalLinkTransform("panda_link3").translation();
-            joint_i = current_state.getGlobalLinkTransform("panda_link2").translation();
-            lambda = (joint_i1-joint_i).dot((min_distance_pair_second_pos - joint_i)) / 
-                        (joint_i1-joint_i).dot((joint_i1-joint_i));
-            if (lambda < 0.0)
-            {
-                lambda = 0.0;
-            }
-            else if (lambda > 1.0)
-            {
-                lambda = 1.0;
-            }
-            current_state.getJacobian(joint_model_group, current_state.getLinkModel("panda_link2"), reference_point, J_i);
-            J_i_pinv = J_i.completeOrthogonalDecomposition().pseudoInverse();
-            current_state.getJacobian(joint_model_group, current_state.getLinkModel("panda_link3"), reference_point, J_i1);
-            J_i1_pinv = J_i1.completeOrthogonalDecomposition().pseudoInverse();
-        }
-        */
         // RCLCPP_INFO(node->get_logger(), "closest link: %s", min_distance_pair_first.c_str());
         // RCLCPP_INFO(node->get_logger(), "Pseudo inverse of jacobian i: ");
         // RCLCPP_INFO_STREAM(node->get_logger(), J_i_trans_pinv);
