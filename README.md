@@ -1,32 +1,3 @@
-# Real-time path planning for human-robot collaboration
-
-## Description
-Note: Right now, the code only works with a real robot.\
-Here is the overview of the system.
-![System Overview](img/System_overview_for_github.png)
-The figure shows how each node interact with each other.
-* `motion_planner` node is a sampling-based global planner. Right now, you can send a goal pose to the
-  node via command line interface when starting the node.
-  ```
-  ros2 run motion_planning_mt motion_planner --ros-args -p <parameter_name>:=<value> 
-  ```
-  There are five paramaeters you can set:
-  1. `goal_positions`: \
-   Goal positions in Cartesian space. It should be provided to the node as a list of double. For example, [x, y, z, x, y, z, ...]. The default value is [0.5, 0.0, 0.6].
-  2. `goal_orientations`: \
-   Goal orientations in quaternion. It should be provided to the node as a list of double. For example, [x, y, z, w, x, y, z, w, ...].The default value is [1.0 , 0.0, 0.0, 0.0].
-  3. `set_goal_pose`: \
-   whether to set the goal pose. The default value is `false`.
-  4. `seed`: \
-   The seed controls the goal position when you didn't set your own goal pose. The default value is 1.
-  5. `num_of_rounds`: \
-   Number of goal poses that the motion planner will plan for. If `num_of_rounds` is 3. There should be 9 numbers in `goal_positions` and 12numbers in `goal_orientations`. The default value is 1.
-* `distance_calculator` node calculates the repulsion field based on the closest distance between obstacles and the robot.
-* `explicit_reference_governor` node is a potential field based local planner. It receives all the information and generates
-  the final command that is sent to the Cartesian impedance controller.
-* `cartesian_impedance_controller` node calculates the required torque that is a combination of:
-  1. Impedance force that controls the end-effector behavior.
-  2. Nullspace torque that controls the configuration of the robot.
 
 ## Installtion steps
 ### MoveIt
@@ -116,20 +87,15 @@ colcon build --cmake-args -DCMAKE_BUILD_TYPE=Release
 source install/setup.sh
 ```
 
-### Cartesian Impedance Controller
+###Riemannian Motion Policy Controller
 
-Clone the modified [Cartesian impedance Controller](https://github.com/ptliu268/cartesian_impedance_control) (forked from Curdin).
+See https://github.com/acaviezel/Riemannian-Motion-Policies-Franka-Emika-Robot for installation details.
+
+Add RMP controller to the config file located inside  `franka_moveit_config` package.\
+Path to the file: `franka_ros2/franka_moveit_config/config/fr3_ros_controllers.yaml`
 ```
-cd src/franka_ros2/src
-git clone https://github.com/ptliu268/cartesian_impedance_control.git
-git clone https://github.com/CurdinDeplazes/messages_fr3.git
-cd src/franka_ros2
-```
-Add cartesian impedance controller to the config file located inside  `franka_moveit_config` package.\
-Path to the file: `franka_ros2/franka_moveit_config/config/panda_ros_controllers.yaml`
-```
-cartesian_impedance_controller:
-    type: cartesian_impedance_control/CartesianImpedanceController
+    riemannian_motion_policy:
+      type: riemannian_motion_policy/RiemannianMotionPolicy 
 ```
 Also in the `franka_moveit_config` package, modify the `moveit.launch.py` launch file:
 1. Add two more key-value pair to the variable `planning_scene_monitor_parameters`.
@@ -143,11 +109,11 @@ Also in the `franka_moveit_config` package, modify the `moveit.launch.py` launch
     'publish_robot_description_semantic' : True,
   }
   ```
-2. Load cartesian impedance controller instead of panda_arm_controller.
+2. Load cartesian impedance controller instead of fr3_arm_controller.
   ```python
   # Load controllers
   load_controllers = []
-  for controller in ['joint_state_broadcaster','cartesian_impedance_controller']: # instead of panda_arm_controller
+  for controller in ['joint_state_broadcaster','riemannian_motion_policy']: # instead of fr3_arm_controller
       load_controllers += [
           ExecuteProcess(
               cmd=['ros2 run controller_manager spawner {}'.format(controller)],
@@ -177,7 +143,7 @@ After sourcing the workspace, change the working directory to `motion_planning_m
 ```
 cd src/motion_planning_mt
 ```
-Launch the moveit environment and the Cartesian impedance controller.
+Launch the moveit environment and the RMP controller.
 ```
 ros2 launch franka_moveit_config moveit.launch.py robot_ip:=<fci-ip>
 ```
@@ -186,22 +152,14 @@ To visualize the obstacles and the minimum distance in RViz, add two ROS2 topics
    1. Add one MarkerArray, set the topic to which it subscribes to `/rviz_visual_tools` (If not yet subscribes).
    2. Add one MarkerArray, set the topic to which it subscribes to `/minimum_distance_visualization`.
 
-Run the demo scene node, which populates three moving boxes.
+Run the scene node, which populates three cylinders (adjustable).
 ```
-ros2 run motion_planning_mt demo_scene
+ros2 run motion_planning_mt cylinder_scene
 ```
 
-Run the distance calculator node, which visualize the distance between the closest obstacle to the robot.
+Run the distance calculator node, which visualize the distance between the closest obstacle and each robot link.
 ```
 ros2 run motion_planning_mt distance_calculator
 ```
 
-Run the local planner node.
-```
-ros2 run motion_planning_mt explicit_reference_governor
-```
 
-Run the global planner node. * Be sure you are at the root folder of `motion_planning_mt`.
-```
-ros2 run motion_planning_mt motion_planner --ros-args --params-file demo/repeat_demo.yaml
-```
