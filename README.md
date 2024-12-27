@@ -148,18 +148,18 @@ Launch the moveit environment and the RMP controller.
 ros2 launch franka_moveit_config moveit.launch.py robot_ip:=<fci-ip>
 ```
 
-To visualize the obstacles and the minimum distance in RViz, add two ROS2 topics. In displays panel, click "Add" button on the lower left corner.
-   1. Add one MarkerArray, set the topic to which it subscribes to `/rviz_visual_tools` (If not yet subscribes).
-   2. Add one MarkerArray, set the topic to which it subscribes to `/minimum_distance_visualization`.
-
 Run the scene node, which populates three cylinders (adjustable).
 ```
 ros2 run motion_planning_mt cylinder_scene
 ```
 
-Run the distance calculator node, which visualize the distance between the closest obstacle and each robot link.
+Run the distance calculator node, which calculates the distance between the closest obstacle and each robot link.
 ```
 ros2 run motion_planning_mt distance_calculator
 ```
+
+To visualize the obstacles and the minimum distance in RViz, add two ROS2 topics. In displays panel, click "Add" button on the lower left corner.
+   1. Add one MarkerArray, set the topic to which it subscribes to `/rviz_visual_tools` (If not yet subscribes).
+   2. Add one MarkerArray, set the topic to which it subscribes to `/minimum_distance_visualization`.
 
 
