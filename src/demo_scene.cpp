@@ -49,7 +49,7 @@ private:
     void addBoxToPlanningScene()
     {
         moveit_msgs::msg::CollisionObject collision_object;
-        collision_object.header.frame_id = "panda_link0";
+        collision_object.header.frame_id = "fr3_link0";
         collision_object.id = box_name_;
 
         shape_msgs::msg::SolidPrimitive box;
