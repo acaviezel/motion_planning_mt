@@ -1,5 +1,5 @@
 
-## Installtion steps
+## Installation steps
 ### MoveIt
 Install [Moveit Humble](https://moveit.picknik.ai/humble/doc/tutorials/getting_started/getting_started.html).
 Follow the installtion steps there.\
