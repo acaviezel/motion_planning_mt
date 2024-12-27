@@ -87,7 +87,7 @@ colcon build --cmake-args -DCMAKE_BUILD_TYPE=Release
 source install/setup.sh
 ```
 
-###Riemannian Motion Policy Controller
+### Riemannian Motion Policy Controller
 
 See https://github.com/acaviezel/Riemannian-Motion-Policies-Franka-Emika-Robot for installation details.
 
