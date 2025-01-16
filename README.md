@@ -131,7 +131,7 @@ source install/setup.sh
 Lastly, clone this project and build.
 ```
 cd ~/franka_ros2_ws/src
-git clone https://github.com/ptliu268/motion_planning_mt.git
+https://github.com/acaviezel/motion_planning_mt
 cd ~/franka_ros2_ws
 colcon build --cmake-args -DCMAKE_BUILD_TYPE=Release
 ```
