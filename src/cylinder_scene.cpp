@@ -116,31 +116,31 @@ int main(int argc, char **argv)
     auto node = std::make_shared<rclcpp::Node>("static_shapes_scene");
 
     // Create a cylinder
-    auto cylinder1 = std::make_unique<StaticCylinder>(
+    /*auto cylinder1 = std::make_unique<StaticCylinder>(
         node, "cylinder1",
-        std::array<double, 3>{0.5, 0.0, 0.35}, 0.7, 0.1 // Position: [0.4, 0.0, 0.35], Height: 0.7, Radius: 0.1
-    );
+        std::array<double, 3>{0.5, 0.0, 0.35}, 0.7, 0.1 //  Height: 0.7, Radius: 0.1
+    );*/
 
 
     // Create a cylinder
-    auto cylinder2 = std::make_unique<StaticCylinder>(
+    /*auto cylinder2 = std::make_unique<StaticCylinder>(
         node, "cylinder2",
-        std::array<double, 3>{0.0, -0.4, 0.35}, 0.7, 0.1 // Position: [0.4, 0.0, 0.35], Height: 0.7, Radius: 0.1
+        std::array<double, 3>{0.0, -0.4, 0.35}, 0.7, 0.1 //  Height: 0.7, Radius: 0.1
     );
 
     // Create a cylinder
     auto cylinder3 = std::make_unique<StaticCylinder>(
         node, "cylinder3",
-        std::array<double, 3>{0.0, 0.4, 0.35}, 0.7, 0.1 // Position: [0.4, 0.0, 0.35], Height: 0.7, Radius: 0.1
-    );
+        std::array<double, 3>{0.0, 0.4, 0.35}, 0.7, 0.1 // Height: 0.7, Radius: 0.1
+    );*/
 
 
     // Create a sphere
-    /*auto sphere1 = std::make_unique<StaticSphere>(
+    auto sphere1 = std::make_unique<StaticSphere>(
         node, "sphere1",
         std::array<double, 3>{0.1, 0.0, 0.5}, // Position: [0.2, 0.0, 0.35]
-        0.05                                    // Radius: 0.05
-    );*/
+        0.1                                    // Radius: 0.05
+    );
 
     RCLCPP_INFO(node->get_logger(), "Created static shapes successfully.");
     rclcpp::spin(node);

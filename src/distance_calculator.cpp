@@ -362,7 +362,7 @@ int main(int argc, char** argv)
             Eigen::Vector3d min_distance_pair_second_pos_link_frame = current_state.getGlobalLinkTransform(link_name).inverse() * min_distance_pair_second_pos;
             Eigen::Vector3d repulsion_direction_link_frame = min_distance_pair_first_pos_link_frame - min_distance_pair_second_pos_link_frame;
             //print the position of the closest point
-            RCLCPP_INFO(node->get_logger(), "Closest point position: %f, %f, %f", min_distance_pair_first_pos_link_frame.x(), min_distance_pair_first_pos_link_frame.y(), min_distance_pair_first_pos_link_frame.z());
+            //RCLCPP_INFO(node->get_logger(), "Closest point position: %f, %f, %f", min_distance_pair_first_pos_link_frame.x(), min_distance_pair_first_pos_link_frame.y(), min_distance_pair_first_pos_link_frame.z());
             // Compute the Jacobian for the closest point on the link i and store it under J_closest
             Eigen::MatrixXd J_dynamic;
             Eigen::Matrix<double, 6, 7> J_closest;
@@ -468,7 +468,7 @@ int main(int argc, char** argv)
             }
             // Visualization for the current link
             visualization_msgs::msg::Marker spheres;
-            spheres.header.frame_id = "fr3_link0";
+            spheres.header.frame_id = "base";
             spheres.header.stamp = node->now();
             spheres.id = static_cast<int>(std::hash<std::string>{}(link_name));
             spheres.type = visualization_msgs::msg::Marker::SPHERE_LIST;
@@ -486,7 +486,7 @@ int main(int argc, char** argv)
             spheres.points.push_back(p2);
 
             visualization_msgs::msg::Marker arrow;
-            arrow.header.frame_id = "fr3_link0";
+            arrow.header.frame_id = "base";
             arrow.header.stamp = node->now();
             arrow.id = static_cast<int>(std::hash<std::string>{}(link_name)) + 1;
             arrow.type = visualization_msgs::msg::Marker::ARROW;
@@ -513,15 +513,6 @@ int main(int argc, char** argv)
         {
             RCLCPP_INFO(node->get_logger(), "Repulsion direction for link %s: (%.4f, %.4f, %.4f)",
                         link.c_str(), direction.x(), direction.y(), direction.z());
-        }
-
-        // Log all safe positions
-        for (const auto &[link, position] : safe_positions_per_link)
-        {
-            double x, y, z;
-            std::tie(x, y, z) = position;
-            RCLCPP_INFO(node->get_logger(), "Safe position for link %s: (%.4f, %.4f, %.4f)",
-                        link.c_str(), x, y, z);
         }
 
         //publish the closest distance
