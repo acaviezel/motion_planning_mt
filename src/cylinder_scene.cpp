@@ -12,18 +12,21 @@ public:
         const std::string& cylinder_name,
         const std::array<double, 3>& position,
         double height,
-        double radius
+        double radius,
+        const std::array<double, 4>& orientation
     ) : node_(node),
         cylinder_name_(cylinder_name),
         position_(position),
         height_(height),
-        radius_(radius)
+        radius_(radius),
+        orientation_(orientation)
     {
         planning_scene_publisher_ = node_->create_publisher<moveit_msgs::msg::PlanningScene>("planning_scene", 10);
         addCylinderToPlanningScene();
     }
 
 private:
+
     void addCylinderToPlanningScene()
     {
         moveit_msgs::msg::CollisionObject collision_object;
@@ -35,7 +38,11 @@ private:
         cylinder.dimensions = {height_, radius_}; // Cylinder dimensions: height and radius
 
         geometry_msgs::msg::Pose cylinder_pose;
-        cylinder_pose.orientation.w = 1.0; // No rotation
+        cylinder_pose.orientation.x = orientation_[0];
+        cylinder_pose.orientation.y = orientation_[1];
+        cylinder_pose.orientation.z = orientation_[2];
+        cylinder_pose.orientation.w = orientation_[3];
+
         cylinder_pose.position.x = position_[0];
         cylinder_pose.position.y = position_[1];
         cylinder_pose.position.z = position_[2];
@@ -47,11 +54,13 @@ private:
         planning_scene_interface_.applyCollisionObject(collision_object);
 
         RCLCPP_INFO(node_->get_logger(), "Added cylinder %s to the planning scene", cylinder_name_.c_str());
-    }
+    }   
+
 
     rclcpp::Node::SharedPtr node_;
     std::string cylinder_name_;
     std::array<double, 3> position_;
+    std::array<double, 4> orientation_;
     double height_;
     double radius_;
     moveit::planning_interface::PlanningSceneInterface planning_scene_interface_;
@@ -115,32 +124,47 @@ int main(int argc, char **argv)
 
     auto node = std::make_shared<rclcpp::Node>("static_shapes_scene");
 
+    
+
     // Create a cylinder
-    /*auto cylinder1 = std::make_unique<StaticCylinder>(
+    auto cylinder1 = std::make_unique<StaticCylinder>(
         node, "cylinder1",
-        std::array<double, 3>{0.5, 0.0, 0.35}, 0.7, 0.1 //  Height: 0.7, Radius: 0.1
-    );*/
-
-
-    // Create a cylinder
-    /*auto cylinder2 = std::make_unique<StaticCylinder>(
-        node, "cylinder2",
-        std::array<double, 3>{0.0, -0.4, 0.35}, 0.7, 0.1 //  Height: 0.7, Radius: 0.1
+        std::array<double, 3>{0.5, 0, 0.3}, 0.5, 0.05, // Position, Height: 0.5, Radius: 0.05
+        std::array<double, 4>{0.707, 0.0, 0.0, 0.707}       // Orientation for y-axis alignment
     );
 
-    // Create a cylinder
+    auto cylinder2 = std::make_unique<StaticCylinder>(
+        node, "cylinder2",
+        std::array<double, 3>{0.5, 0, 0.8}, 0.5, 0.05, // Position, Height: 0.5, Radius: 0.05
+        std::array<double, 4>{0.707, 0.0, 0.0, 0.707}       // Orientation for y-axis alignment
+    );
+
     auto cylinder3 = std::make_unique<StaticCylinder>(
         node, "cylinder3",
-        std::array<double, 3>{0.0, 0.4, 0.35}, 0.7, 0.1 // Height: 0.7, Radius: 0.1
-    );*/
+        std::array<double, 3>{0.5, 0.25, 0.45}, 0.5, 0.05,  // Position, Height: 0.5, Radius: 0.05
+        std::array<double, 4>{0.0, 0.0, 0.0, 1.0}          // Orientation for z-axis alignment
+    );
+
+    auto cylinder4 = std::make_unique<StaticCylinder>(
+        node, "cylinder4",
+        std::array<double, 3>{0.5, -0.25, 0.35}, 0.7, 0.05,  // Position, Height: 0.5, Radius: 0.05
+        std::array<double, 4>{0.0, 0.0, 0.0, 1.0}          // Orientation for z-axis alignment
+    );
+
 
 
     // Create a sphere
-    auto sphere1 = std::make_unique<StaticSphere>(
+    /*auto sphere1 = std::make_unique<StaticSphere>(
         node, "sphere1",
-        std::array<double, 3>{0.1, 0.0, 0.5}, // Position: [0.2, 0.0, 0.35]
-        0.1                                    // Radius: 0.05
+        std::array<double, 3>{0.5, 0.0, 0.4}, // Position: [0.2, 0.0, 0.35]
+        0.15                                    // Radius: 0.05
     );
+
+    auto sphere2 = std::make_unique<StaticSphere>(
+        node, "sphere2",
+        std::array<double, 3>{0.18, 0.0, 0.35}, // Position: [0.2, 0.0, 0.35]
+        0.1                                    // Radius: 0.05
+    );*/
 
     RCLCPP_INFO(node->get_logger(), "Created static shapes successfully.");
     rclcpp::spin(node);
