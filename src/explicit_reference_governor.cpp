@@ -108,7 +108,7 @@ VectorXd jointRepulsionField(VectorXd q_v)
 
 VectorXd navigationField(const VectorXd q_r, const VectorXd q_v)
 {
-    return attractionField(q_r,q_v) + jointRepulsionField(q_v);
+    return attractionField(q_r,q_v); //+ jointRepulsionField(q_v);
 }
 
 double dynamicSafetyMargin()
@@ -125,14 +125,14 @@ class ExplicitReferenceGovernor : public rclcpp::Node
             reference_subscription = this->create_subscription<trajectory_msgs::msg::JointTrajectory>(
                 "reference", 10, std::bind(&ExplicitReferenceGovernor::referenceCallback, this, std::placeholders::_1));
 
-            primitive_shape_repulsion_field_subscription = this->create_subscription<std_msgs::msg::Float64MultiArray>(
-                "primitive_shape_repulsion_field", 10, std::bind(&ExplicitReferenceGovernor::primitiveShapeRepulsionFieldCallback, this, std::placeholders::_1));
+            /*primitive_shape_repulsion_field_subscription = this->create_subscription<std_msgs::msg::Float64MultiArray>(
+                "primitive_shape_repulsion_field", 10, std::bind(&ExplicitReferenceGovernor::primitiveShapeRepulsionFieldCallback, this, std::placeholders::_1));*/
 
             configuration_publisher = this->create_publisher<trajectory_msgs::msg::JointTrajectory>(
                 "nullspace_configuration", 10);
             
             goal_pose_publisher = this->create_publisher<geometry_msgs::msg::Pose>(
-                "ee_goal_pose", 10);
+                "/riemannian_motion_policy/reference_pose", 10);
             
             q_v_old << 0.0, -0.785, 0.0, -2.356, 0.0, 1.571, 0.785; // initial configuration after launching
             q_v_new << 0.0, -0.785, 0.0, -2.356, 0.0, 1.571, 0.785; // initial configuration after launching
@@ -151,7 +151,7 @@ class ExplicitReferenceGovernor : public rclcpp::Node
             trajectory_msgs::msg::JointTrajectory processed_msg = msg;
             VectorXd q_r(7);
             q_r = stdVectorToVectorXd(msg.points[0].positions);
-            VectorXd q_v_dot = ( navigationField(q_r,q_v_old) + primitiveShapeRepulsionField() ) * dynamicSafetyMargin();
+            VectorXd q_v_dot = ( navigationField(q_r,q_v_old) );// * dynamicSafetyMargin();
             // VectorXd q_v_dot = ( navigationField(q_r,q_v_old)) * dynamicSafetyMargin();
             double eta = 0.05; //smoothing factor
             double step_size =((q_v_dot*dt).norm() < (q_r - q_v_old).norm()) ? (q_v_dot*dt).norm() : (q_r - q_v_old).norm();

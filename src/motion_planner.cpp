@@ -19,6 +19,7 @@
 #include <thread>
 #include <atomic>
 
+
 using namespace std::chrono_literals;
 using namespace Eigen;
 
@@ -95,14 +96,17 @@ class MotionPlanner : public rclcpp::Node
             // Initialize moveit objects
             move_group_interface = std::make_shared<moveit::planning_interface::MoveGroupInterface>(node, PLANNING_GROUP);
             planning_scene_interface = std::make_shared<moveit::planning_interface::PlanningSceneInterface>();
-            visual_tools = std::make_shared<moveit_visual_tools::MoveItVisualTools>(node, "panda_link0", 
+            visual_tools = std::make_shared<moveit_visual_tools::MoveItVisualTools>(node, "fr3_link0", 
                                     rviz_visual_tools::RVIZ_MARKER_TOPIC, move_group_interface->getRobotModel());
             visual_tools->deleteAllMarkers();
 
-            joint_model_group = move_group_interface->getRobotModel()->getJointModelGroup("panda_arm");
+            joint_model_group = move_group_interface->getRobotModel()->getJointModelGroup("fr3_arm");
             move_group_interface->setPlanningTime(10.0);
-            move_group_interface->setMaxAccelerationScalingFactor(0.5);
-            move_group_interface->setMaxVelocityScalingFactor(0.5);
+            move_group_interface->setMaxAccelerationScalingFactor(0.1);
+            move_group_interface->setMaxVelocityScalingFactor(0.1);
+            //move_group_interface->setPlanningPipelineId("chomp");
+            move_group_interface->setPlannerId("BiTRRTkConfigDefault");
+            
 
             planning_scene_monitor_ = std::make_shared<planning_scene_monitor::PlanningSceneMonitor>(node, "robot_description");
             if (!planning_scene_monitor_->getPlanningScene())
@@ -119,9 +123,9 @@ class MotionPlanner : public rclcpp::Node
                 "reference", 10);
             
             joint_trajectory_subscription = this->create_subscription<trajectory_msgs::msg::JointTrajectory>(
-                "panda_arm_controller/joint_trajectory", 10, std::bind(&MotionPlanner::jointTrajectorySubscriptionCallback, this, std::placeholders::_1));
+                "fr3_arm_controller/joint_trajectory", 10, std::bind(&MotionPlanner::jointTrajectorySubscriptionCallback, this, std::placeholders::_1));
 
-            this->declare_parameter<std::vector<double>>("goal_positions", {0.5, 0.0, 0.6});
+            this->declare_parameter<std::vector<double>>("goal_positions", {0.2, 0.0, 0.6});
             this->declare_parameter<std::vector<double>>("goal_orientations", {1.0, 0.0, 0.0, 0.0}); // x, y, z, w
             this->declare_parameter<bool>("set_goal_pose",false);
             this->declare_parameter<int>("seed",1);
@@ -234,7 +238,7 @@ class MotionPlanner : public rclcpp::Node
                         Vector3d position = T.block<3,1>(0,3);
                         Quaterniond orientation(T.block<3,3>(0,0));
                         orientation.normalize();
-                        // const Eigen::Isometry3d& end_effector_pose = random_state.getGlobalLinkTransform("panda_link8");
+                        // const Eigen::Isometry3d& end_effector_pose = random_state.getGlobalLinkTransform("fr3_link8");
                         // target_pose.position = tf2::toMsg(Eigen::Vector3d(end_effector_pose.translation()));
                         // target_pose.orientation = tf2::toMsg(Eigen::Quaterniond(end_effector_pose.rotation()));
                         target_pose.position = tf2::toMsg(position);
@@ -247,7 +251,7 @@ class MotionPlanner : public rclcpp::Node
             {
                 visual_tools->publishAxisLabeled(target_pose, "target_pose");
                 visual_tools->trigger();
-                move_group_interface->setPoseTarget(target_pose, "panda_hand_tcp");
+                move_group_interface->setPoseTarget(target_pose, "fr3_hand_tcp");
             }
             else
             {
@@ -263,12 +267,25 @@ class MotionPlanner : public rclcpp::Node
             // Plan to the target pose
             auto plan_start = std::chrono::steady_clock::now();
             moveit::planning_interface::MoveGroupInterface::Plan my_plan;
-            bool success = (move_group_interface->plan(my_plan) == moveit::core::MoveItErrorCode::SUCCESS);
+            //bool success = (move_group_interface->plan(my_plan) == moveit::core::MoveItErrorCode::SUCCESS);
+            bool success = false;
+            while (!success){
+                move_group_interface->setPositionTarget(
+                    target_pose.position.x,
+                    target_pose.position.y,
+                    target_pose.position.z,
+                    "fr3_hand_tcp"
+                );
+                
+                // Attempt to plan with only the position constraint
+                success = (move_group_interface->plan(my_plan) == moveit::core::MoveItErrorCode::SUCCESS);   
+            }
 
             if (success)
             {
                 visual_tools->publishTrajectoryLine(my_plan.trajectory_, joint_model_group);
                 visual_tools->trigger();
+                RCLCPP_INFO_STREAM(this->get_logger(), "Current Planner (After Setting): " << move_group_interface->getPlannerId());
 
                 RCLCPP_INFO(this->get_logger(), "Plan successful");
                 RCLCPP_INFO_STREAM(this->get_logger(), "number of way points: " << my_plan.trajectory_.joint_trajectory.points.size());
@@ -299,7 +316,7 @@ class MotionPlanner : public rclcpp::Node
                 const double RESIDUAL_CHANGE_THRESHOLD = 1e-4;
 
                 // Another variables to track if the maximum duration time is reached
-                const auto timeout_duration = 8s;
+                const auto timeout_duration = 25s;
 
                 while (rclcpp::ok() && (std::chrono::steady_clock::now() - plan_start) < timeout_duration)
                 {
@@ -310,7 +327,7 @@ class MotionPlanner : public rclcpp::Node
                     
                     q_r.header.stamp.sec = 0;
                     q_r.header.stamp.nanosec = 0;
-                    q_r.header.frame_id = "panda_link0";
+                    q_r.header.frame_id = "fr3_link0";
                     q_r.joint_names = my_plan.trajectory_.joint_trajectory.joint_names;
                     // RCLCPP_INFO(this->get_logger(), "before using *it");
                     (*it).velocities = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
@@ -331,7 +348,7 @@ class MotionPlanner : public rclcpp::Node
                     // moveit::core::RobotState waypoint_state(move_group_interface->getRobotModel());
                     // waypoint_state.setJointGroupPositions(joint_model_group, q_r.points[0].positions);
                     // waypoint_state.update();
-                    // const Eigen::Isometry3d& end_effector_state = waypoint_state.getGlobalLinkTransform("panda_link8");            
+                    // const Eigen::Isometry3d& end_effector_state = waypoint_state.getGlobalLinkTransform("fr3_link8");            
                     // Eigen::Vector3d end_effector_position = end_effector_state.translation();
                     Eigen::Matrix4d end_effector_pose = get_fk_solution_hand(q_r.points[0].positions);
                     Eigen::Vector3d end_effector_position = end_effector_pose.block<3,1>(0,3);
@@ -371,8 +388,8 @@ class MotionPlanner : public rclcpp::Node
                     }
                     
                     // Compute the residual between current pose and the goal pose
-                    Eigen::Quaterniond current_rot(current_state.getGlobalLinkTransform("panda_hand_tcp").rotation());
-                    Eigen::Vector3d current_pos(current_state.getGlobalLinkTransform("panda_hand_tcp").translation());
+                    Eigen::Quaterniond current_rot(current_state.getGlobalLinkTransform("fr3_hand_tcp").rotation());
+                    Eigen::Vector3d current_pos(current_state.getGlobalLinkTransform("fr3_hand_tcp").translation());
                     Eigen::Quaterniond target_rot;
                     Eigen::Vector3d target_position;
                     tf2::fromMsg(target_pose.position, target_position);
@@ -474,7 +491,7 @@ class MotionPlanner : public rclcpp::Node
             q_v = msg.points[0].positions;
         }
 
-        const std::string PLANNING_GROUP {"panda_arm"};
+        const std::string PLANNING_GROUP {"fr3_arm"};
         std::shared_ptr<moveit::planning_interface::MoveGroupInterface> move_group_interface;
         std::shared_ptr<moveit::planning_interface::PlanningSceneInterface> planning_scene_interface;
         planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor_;

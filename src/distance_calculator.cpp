@@ -297,6 +297,7 @@ int main(int argc, char** argv)
 
         // Retrieve and count the collision objects in the scene.
         const auto& collision_objects = locked_planning_scene->getWorld()->getObjectIds();
+        //print collision objects id
         size_t num_objects = collision_objects.size();
         
         
@@ -318,7 +319,8 @@ int main(int argc, char** argv)
                     if ((it->second[0].body_type_1 == collision_detection::BodyType::ROBOT_LINK &&
                         it->second[0].body_type_2 == collision_detection::BodyType::ROBOT_LINK) ||
                         it->second[0].body_name_1 != link_name ||
-                        it->second[0].body_name_2 != object)
+                        it->second[0].body_name_2 != object||
+                        (object == "cylinder0" && link_name != "fr3_leftfinger"))
                     {
                         continue;
                     }
@@ -534,9 +536,11 @@ int main(int argc, char** argv)
         closest_distance_msg.framehandz = handz;
         closest_distance_msg.jacobianhand = jacobian_array_hand;
 
-        closest_distance_publisher->publish(closest_distance_msg);
 
-
+        //only publish if there are obstacles
+        if (num_objects > 0){
+            closest_distance_publisher->publish(closest_distance_msg);
+        }
         /*RCLCPP_INFO_STREAM(node->get_logger(), "the closest link is: " << min_distance_pair_first);
         auto end_time = std::chrono::steady_clock::now();
         auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);

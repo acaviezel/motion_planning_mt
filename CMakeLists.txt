@@ -27,7 +27,6 @@ add_executable(motion_planner src/motion_planner.cpp)
 add_executable(dynamic_random_scene src/dynamic_random_scene.cpp)
 add_executable(moving_box src/moving_box.cpp)
 add_executable(cylinder_scene src/cylinder_scene.cpp)
-
 add_executable(chomp_planner src/chomp_planner.cpp)
 add_executable(guided_moving_box src/guided_moving_box.cpp)
 add_executable(demo_scene src/demo_scene.cpp)

@@ -69,15 +69,15 @@ public:
 
         // Initialize MoveIt components
         move_group_interface = std::make_shared<moveit::planning_interface::MoveGroupInterface>(node, PLANNING_GROUP);
-        visual_tools = std::make_shared<moveit_visual_tools::MoveItVisualTools>(node, "panda_link0", rviz_visual_tools::RVIZ_MARKER_TOPIC, move_group_interface->getRobotModel());
+        visual_tools = std::make_shared<moveit_visual_tools::MoveItVisualTools>(node, "fr3_link0", rviz_visual_tools::RVIZ_MARKER_TOPIC, move_group_interface->getRobotModel());
         visual_tools->deleteAllMarkers();
 
-        joint_model_group = move_group_interface->getRobotModel()->getJointModelGroup("panda_arm");
+        joint_model_group = move_group_interface->getRobotModel()->getJointModelGroup("fr3_arm");
         // Ensure joint_model_group is not null
         if (!joint_model_group)
         {
-            RCLCPP_ERROR(this->get_logger(), "Failed to get joint model group 'panda_arm'");
-            throw std::runtime_error("Failed to get joint model group 'panda_arm'");
+            RCLCPP_ERROR(this->get_logger(), "Failed to get joint model group 'fr3_arm'");
+            throw std::runtime_error("Failed to get joint model group 'fr3_arm'");
         }
 
         move_group_interface->setPlanningTime(10.0);
@@ -174,7 +174,7 @@ public:
                     Vector3d position = T.block<3,1>(0,3);
                     Quaterniond orientation(T.block<3,3>(0,0));
                     orientation.normalize();
-                    // const Eigen::Isometry3d& end_effector_pose = random_state.getGlobalLinkTransform("panda_link8");
+                    // const Eigen::Isometry3d& end_effector_pose = random_state.getGlobalLinkTransform("fr3_link8");
                     // target_pose.position = tf2::toMsg(Eigen::Vector3d(end_effector_pose.translation()));
                     // target_pose.orientation = tf2::toMsg(Eigen::Quaterniond(end_effector_pose.rotation()));
                     target_pose.position = tf2::toMsg(position);
@@ -228,7 +228,7 @@ public:
                 checkCollision();
 
                 // Check if the robot is close to the goal pose
-                auto current_pose = move_group_interface->getCurrentPose("panda_link8");
+                auto current_pose = move_group_interface->getCurrentPose("fr3_link8");
                 double position_tolerance = 0.01;
                 double orientation_tolerance = 0.015;
 
@@ -287,7 +287,7 @@ private:
     }
 
 
-    const std::string PLANNING_GROUP{"panda_arm"};
+    const std::string PLANNING_GROUP{"fr3_arm"};
     std::shared_ptr<moveit::planning_interface::MoveGroupInterface> move_group_interface;
     std::shared_ptr<moveit_visual_tools::MoveItVisualTools> visual_tools;
     std::shared_ptr<planning_scene_monitor::PlanningSceneMonitor> planning_scene_monitor_;
