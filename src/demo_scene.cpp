@@ -234,7 +234,7 @@ int main(int argc, char **argv)
     ));*/
 
 
-    //4 boxes along z-axis
+    //4 moving boxes along z-axis
     rclcpp::executors::SingleThreadedExecutor executor;
      executor.add_node(node);
     boxes.push_back(std::make_unique<MovingBox>(
@@ -246,7 +246,7 @@ int main(int argc, char **argv)
         node, "box2",
         std::array<double, 3>{-0.4, 0.0, 0.5}, 0.1, 0.4, "z", 50.0, 0.5
     ));*/
-
+    //boxes are not starting at the same time
     auto start_time = node->now();
      while (rclcpp::ok() && (node->now() - start_time).seconds() < 0.66) {
          executor.spin_some();
